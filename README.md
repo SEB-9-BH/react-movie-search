@@ -1,5 +1,12 @@
 # React Movie Search… with Vite
 
+<div style="display: flex; justify-content: space-between;">
+
+<p><img width="862" height="342" alt="Untitled Diagram drawio" src="https://github.com/user-attachments/assets/a3d67539-f43f-4923-a6f5-7dfce418b427" /></p>
+<p><img src="https://i.imgur.com/TGZKfoI.png" alt="components"></p>
+
+</div>
+
 ### Lesson to be Learned
 
 * Making AJAX requests in a React app
