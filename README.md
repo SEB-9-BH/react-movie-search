@@ -8,12 +8,12 @@
 
 ---
 
-## Why Vite instead of Create React App
+## Why Vite 
 
-Vite is faster in dev. Hot reload is instant.
+Vite is fast in dev. Hot reload is instant.
 Builds are smaller and quicker.
 
-Cons exist. Fewer batteries included than CRA.
+Cons exist. Fewer batteries included than something like Create React App.
 Some plugins may need light config.
 
 Think of Vite as a sports bike… CRA is a minivan.
@@ -318,19 +318,6 @@ h1 {
 .error { color: var(--danger); font-weight: 600; }
 ```
 
----
-
-## What Changed vs CRA
-
-* You used `npm create vite@latest` instead of `npx create-react-app`.
-* Entry is `src/main.jsx` instead of `src/index.js`.
-* Scripts are `dev`, `build`, `preview`.
-* Env vars come from `import.meta.env`.
-
-Everything else feels like normal React.
-You still lift state up. You still fetch. You still render.
-
----
 
 ## Test the API quickly
 
@@ -351,7 +338,7 @@ Keep it on https to avoid mixed content.
 Replace the first `useEffect` with:
 
 ```jsx
-React.useEffect(() => {
+useEffect(() => {
   const picks = ["Clueless", "The Matrix", "Black Panther", "Interstellar", "The Godfather"];
   const random = picks[Math.floor(Math.random() * picks.length)];
   getMovie(random);
@@ -385,16 +372,19 @@ Goal is a slightly more complex app using only OMDb and CSS.
    Modal with backdrop.
 
 ### Suggested roles
-
+* PM ... has the laptop, makes the fork and actually writes the code.
 * API lead… writes `getResults` and `getById` helpers
 * State lead… coordinates context or lifted state
 * UI lead… grid, modal, buttons, responsive tweaks
 * QA lead… tests edge cases and empty states
+* You will soon learn Git Collaboration but for now you should Pair/Group Program
 
 ### Timebox
 
 45 minutes build.
-10 minutes demo.
+5 minutes to collaborate.
+10 minutes to present.
+Only one submission required per group.
 
 ### Acceptance criteria
 
