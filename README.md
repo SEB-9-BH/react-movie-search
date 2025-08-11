@@ -15,13 +15,7 @@
 
 ---
 
-Got it — here’s the **progressive, step-by-step version** of your lesson updated so we only use `useState` and `useEffect` imports instead of `React.useState` and `React.useEffect`.
-
----
-
 # React Movie Search… with Vite
-
-*A progressive build you can teach step by step*
 
 ---
 
