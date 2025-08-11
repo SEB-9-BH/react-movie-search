@@ -15,78 +15,86 @@
 
 ---
 
-## Why Vite 
-
-Vite is fast in dev. Hot reload is instant.
-Builds are smaller and quicker.
-
-Cons exist. Fewer batteries included than something like Create React App.
-Some plugins may need light config.
-
-Think of Vite as a sports bike… CRA is a minivan.
-Both get you there. One accelerates harder.
+Got it — here’s the **progressive, step-by-step version** of your lesson updated so we only use `useState` and `useEffect` imports instead of `React.useState` and `React.useEffect`.
 
 ---
 
-## Create the Project with Vite
+# React Movie Search… with Vite
+
+*A progressive build you can teach step by step*
+
+---
+
+## Lesson Outcomes
+
+* Fetch data from an external API
+* Manage state across components
+* Design a clean component hierarchy
+* Pass props down… lift shared state up
+* Use `useEffect` to model lifecycle
+* Understand how `useEffect` changes state and triggers renders
+
+---
+
+## How SPAs and React work… using the diagram
+
+**Flow.** The visitor loads one HTML shell. React mounts in the browser. Components render UI. React calls APIs with `fetch`… no full-page reload.
+Node and Express answer those API calls. Express talks to a database like MongoDB. JSON comes back. React updates the DOM. It feels instant.
+
+**Mental model.** React is the front desk. Express is the back office. MongoDB is the file room. `fetch` is the courier moving messages both ways.
+
+---
+
+## Why Vite for this lab
+
+It starts instantly. It rebuilds fast. It keeps focus on React, not tooling.
+Vite exposes env vars that start with `VITE_`… perfect for our API key.
+
+---
+
+# Part 0… Setup
+
+### 0.1 Create the project
 
 ```bash
-# 1) Scaffold
 npm create vite@latest react-movies -- --template react
-
-# 2) Install deps
 cd react-movies
 npm install
-
-# 3) Run dev server
 npm run dev
 ```
 
-You will see three main scripts.
+### 0.2 Add the API key
 
-* `npm run dev`… local dev server
-* `npm run build`… production build
-* `npm run preview`… preview the build
+Create `.env` in the project root.
 
----
+```env
+VITE_OMDB_KEY=YOUR_KEY_HERE
+```
 
-## Project Layout to Use
+### 0.3 Folder plan
 
 ```
 react-movies/
   index.html
   src/
-    App.jsx
     main.jsx
+    App.jsx
     components/
-      MovieDisplay.jsx
       Form.jsx
+      MovieDisplay.jsx
     App.css
     index.css
   .env
 ```
 
-Vite uses `src/main.jsx` to mount your app.
-`index.html` sits at the project root.
-
 ---
 
-## Configure the OMDb API key
+# Part 1… Starter to First Render
 
-Create a `.env` file in the project root.
-
-```env
-VITE_OMDB_KEY=98e3fb1f
-```
-
-Vite exposes only vars prefixed with `VITE_`.
-Never hardcode secrets in source when possible.
-
----
-
-## src/main.jsx
+### 1.1 Clean `main.jsx`
 
 ```jsx
+// src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
@@ -99,32 +107,100 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 );
 ```
 
----
-
-## src/App.jsx
+### 1.2 Start with a tiny `App`
 
 ```jsx
-import React from "react";
+// src/App.jsx
 import "./App.css";
-import MovieDisplay from "./components/MovieDisplay.jsx";
-import Form from "./components/Form.jsx";
 
 export default function App() {
-  // Like moving the mailroom to the lobby… lift shared state up
-  const [movie, setMovie] = React.useState(null);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState("");
+  return (
+    <div className="container">
+      <h1>React Movie Search</h1>
+      <p className="muted">We will add features step by step…</p>
+    </div>
+  );
+}
+```
+
+**Checkpoint.** App renders. No components yet.
+
+---
+
+# Part 2… Component Hierarchy
+
+**Goal.** Design the tree before writing logic.
+
+```
+App
+ ├─ Form                // user types a title… submits
+ └─ MovieDisplay        // shows loading… error… or the movie
+```
+
+Create empty components.
+
+```jsx
+// src/components/Form.jsx
+export default function Form() {
+  return <form className="search">Form goes here…</form>;
+}
+```
+
+```jsx
+// src/components/MovieDisplay.jsx
+export default function MovieDisplay() {
+  return <p className="muted">Results render here…</p>;
+}
+```
+
+Wire them in.
+
+```jsx
+// src/App.jsx
+import "./App.css";
+import Form from "./components/Form.jsx";
+import MovieDisplay from "./components/MovieDisplay.jsx";
+
+export default function App() {
+  return (
+    <div className="container">
+      <h1>React Movie Search</h1>
+      <Form />
+      <MovieDisplay />
+    </div>
+  );
+}
+```
+
+---
+
+# Part 3… State Management in the Parent
+
+**Why here.** Both `Form` and `MovieDisplay` care about the same data.
+Keep shared state at the nearest common parent.
+
+Add parent state and a search function.
+
+```jsx
+// src/App.jsx
+import { useState, useEffect } from "react";
+import "./App.css";
+import Form from "./components/Form.jsx";
+import MovieDisplay from "./components/MovieDisplay.jsx";
+
+export default function App() {
+  const [movie, setMovie] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const apiKey = import.meta.env.VITE_OMDB_KEY;
 
-  const getMovie = async (searchTerm) => {
+  async function getMovie(searchTerm) {
     if (!searchTerm) return;
     setLoading(true);
     setError("");
     try {
-      const url = `https://www.omdbapi.com/?apikey=${apiKey}&t=${encodeURIComponent(
-        searchTerm
-      )}`;
+      const url = `https://www.omdbapi.com/?apikey=${apiKey}&t=${encodeURIComponent(searchTerm)}`;
       const res = await fetch(url);
       const data = await res.json();
 
@@ -134,18 +210,13 @@ export default function App() {
         setMovie(null);
         setError(data.Error || "Movie not found.");
       }
-    } catch (e) {
-      setError("Network error. Try again.");
+    } catch {
       setMovie(null);
+      setError("Network error. Try again.");
     } finally {
       setLoading(false);
     }
-  };
-
-  // useEffect is your scheduled task… run once on mount
-  React.useEffect(() => {
-    getMovie("Clueless");
-  }, []);
+  }
 
   return (
     <div className="container">
@@ -159,33 +230,34 @@ export default function App() {
 
 ---
 
-## src/components/Form.jsx
+# Part 4… Passing Props into `Form` and Controlling Input
 
 ```jsx
-import React from "react";
+// src/components/Form.jsx
+import { useState } from "react";
 
 export default function Form({ moviesearch }) {
-  const [formData, setFormData] = React.useState({ searchterm: "" });
+  const [formData, setFormData] = useState({ searchterm: "" });
 
-  const handleChange = (e) => {
+  function handleChange(e) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  }
 
-  const handleSubmit = (e) => {
+  function handleSubmit(e) {
     e.preventDefault();
     moviesearch(formData.searchterm.trim());
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit} className="search">
       <label htmlFor="searchterm" className="sr-only">Search</label>
       <input
         id="searchterm"
-        type="text"
         name="searchterm"
+        type="text"
         placeholder="Search by title…"
-        onChange={handleChange}
         value={formData.searchterm}
+        onChange={handleChange}
         aria-label="Movie title"
       />
       <button type="submit">Search</button>
@@ -196,11 +268,10 @@ export default function Form({ moviesearch }) {
 
 ---
 
-## src/components/MovieDisplay.jsx
+# Part 5… Display States with `MovieDisplay`
 
 ```jsx
-import React from "react";
-
+// src/components/MovieDisplay.jsx
 export default function MovieDisplay({ movie, loading, error }) {
   if (loading) return <p className="muted">Loading…</p>;
   if (error) return <p className="error">{error}</p>;
@@ -222,225 +293,160 @@ export default function MovieDisplay({ movie, loading, error }) {
 
 ---
 
-## src/index.css  …defaults
-
-```css
-:root {
-  --bg: #0f172a;
-  --panel: #111827;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --accent: #22d3ee;
-  --danger: #f87171;
-}
-
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; }
-
-body {
-  margin: 0;
-  background: linear-gradient(180deg, #0b1020, #111827);
-  color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-}
-
-.sr-only {
-  position: absolute; width: 1px; height: 1px; margin: -1px;
-  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-}
-```
-
----
-
-## src/App.css  …simple styling
-
-```css
-.container {
-  max-width: 960px;
-  margin: 2rem auto;
-  padding: 1rem;
-}
-
-h1 {
-  text-align: center;
-  letter-spacing: 0.5px;
-}
-
-.search {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.75rem;
-  margin: 1.5rem 0 2rem;
-}
-
-.search input {
-  padding: 0.8rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #1f2937;
-  background: #0b1324;
-  color: var(--text);
-  outline: none;
-}
-
-.search input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(34,211,238,.15);
-}
-
-.search button {
-  padding: 0.8rem 1rem;
-  border-radius: 8px;
-  border: 0;
-  background: var(--accent);
-  color: #05202b;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.card {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 1rem;
-  background: var(--panel);
-  border: 1px solid #1f2937;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.card-body {
-  padding: 1rem 1rem 1.25rem 0;
-}
-
-.plot {
-  color: var(--muted);
-}
-
-.muted { color: var(--muted); }
-.error { color: var(--danger); font-weight: 600; }
-```
-
-
-## Test the API quickly
-
-Try a direct request in your browser.
-Use your key.
-
-```
-https://www.omdbapi.com/?apikey=YOURKEY&t=godfather
-```
-
-If it returns JSON with `Response: "True"`, you are good.
-Keep it on https to avoid mixed content.
-
----
-
-## Bonus… useEffect random on load
-
-Replace the first `useEffect` with:
+# Part 6… `useEffect` as Lifecycle
 
 ```jsx
+import { useState, useEffect } from "react";
+
+// inside App
 useEffect(() => {
-  const picks = ["Clueless", "The Matrix", "Black Panther", "Interstellar", "The Godfather"];
-  const random = picks[Math.floor(Math.random() * picks.length)];
-  getMovie(random);
+  getMovie("Clueless");
 }, []);
 ```
 
+* Mount → runs once after first render
+* Update → runs when dependencies change
+* Unmount → cleanup runs
+
 ---
 
-# Group Activity… Build a Mini Movie Explorer
+# Part 7… `useEffect` impact on State
 
-You will work in squads.
-Goal is a slightly more complex app using only OMDb and CSS.
+* Calling `setState` in `useEffect` triggers re-render.
+* No dependency array = runs after every render.
+* Add dependencies to control when it runs.
 
-### Features to add
+---
 
-1. Search results grid
-   Use `s=` to search by keyword. Show poster and title.
-   Support `page=` for pagination.
+# Part 8… Lifting State vs Local State
 
-2. Details view
-   Click a result. Fetch by `i=` using `imdbID`.
-   Show a modal with plot, ratings, and cast.
+* Input text stays local in `Form`
+* Movie data lives in `App` for sharing
 
-3. Watchlist
-   Add or remove from a watchlist.
-   Persist in `localStorage`.
+<img width="1024" height="1024" alt="movie display" src="https://github.com/user-attachments/assets/9752a549-ff92-4ac5-a12a-ac212b76701b" />
 
-4. Styling polish
-   Responsive grid.
-   Hover states.
-   Modal with backdrop.
+* **App** as the root owning state: `movie`, `loading`, `error`, and `getMovie(searchTerm)`.
+* **Form** and **MovieDisplay** as **siblings** beneath **App**.
+* **Props down / events up**:
 
-### Suggested roles
-* PM ... has the laptop, makes the fork and actually writes the code.
-* API lead… writes `getResults` and `getById` helpers
-* State lead… coordinates context or lifted state
-* UI lead… grid, modal, buttons, responsive tweaks
-* QA lead… tests edge cases and empty states
-* You will soon learn Git Collaboration but for now you should Pair/Group Program
+  * `Form` receives `{ moviesearch: getMovie }`. On submit it calls the parent.
+  * `MovieDisplay` receives `{ movie, loading, error }`.
+* **Fetch & lifecycle**:
 
-### Timebox
+  * `useEffect` in **App** optionally calls `getMovie('Clueless')` on mount.
+  * `getMovie` sets `loading → true`, fetches OMDb, sets `movie` or `error`, then `loading → false`.
+* **Re-render rule**:
 
-45 minutes build.
-5 minutes to collaborate.
-10 minutes to present.
-Only one submission required per group.
+  * When **Form** triggers `getMovie` and **App** updates state, **App** re-renders and any child that consumes changed props re-renders… so **MovieDisplay** updates automatically.
 
-### Acceptance criteria
+---
 
-* Typing a term shows a paged grid of results.
-* Clicking a card opens a modal with details.
-* A watchlist survives refresh.
-* Layout looks clean on mobile and desktop.
+**Goal**
+In teams, extend the Movie Search app into a **Mini Movie Explorer** using the OMDb API. Add whatever features you want using the OMDB API Docs below are SOME IDEAS, and Acceptance Criteria, you do't time to do all of them, but try it out.
 
-### Starter snippets
+**Features to build**
 
-Helpers:
+1. **Search Results Grid**
+
+   * Use the `s=` endpoint to fetch multiple results.
+   * Display posters and titles in a responsive grid.
+   * Support pagination with `page=` parameter.
+
+2. **Details View**
+
+   * Click a grid card to fetch full details via `i=` (imdbID).
+   * Show details in a **modal** (title, plot, ratings, cast).
+
+3. **Watchlist**
+
+   * Add/remove movies to a watchlist.
+   * Store it in `localStorage` so it survives refresh.
+
+4. **Styling Polish**
+
+   * Responsive design for mobile and desktop.
+   * Hover states and clean UI.
+   * Backdrop blur for modal.
+
+**Roles** (optional suggestion)
+
+* **PM** – Runs the repo, coordinates tasks.
+* **API Lead** – Writes fetch helpers for search & details.
+* **State Lead** – Manages watchlist and global state.
+* **UI Lead** – Builds grid, modal, styling.
+* **QA Lead** – Tests edge cases and empty states.
+
+**Timebox**
+
+* 45 min build
+* 5 min finalize
+* 10 min presentation
+
+**Acceptance Criteria**
+
+* Typing in search updates the results grid.
+* Clicking a card opens details modal.
+* Watchlist works and persists.
+* Layout looks good on both mobile and desktop.
+
+
+# Helper 1: OMDb API functions
+
+`src/lib/omdb.js`
 
 ```jsx
 const API = import.meta.env.VITE_OMDB_KEY;
 
-export async function getResults(term, page = 1) {
+export async function searchMovies(term, page = 1) {
+  if (!term) return { items: [], total: 0 };
   const url = `https://www.omdbapi.com/?apikey=${API}&s=${encodeURIComponent(term)}&page=${page}`;
   const res = await fetch(url);
   const data = await res.json();
-  if (data.Response === "True") return { items: data.Search, total: Number(data.totalResults) };
-  return { items: [], total: 0, error: data.Error };
+  if (data.Response === "True") {
+    return { items: data.Search, total: Number(data.totalResults) };
+  }
+  return { items: [], total: 0, error: data.Error || "No results" };
 }
 
-export async function getById(imdbID) {
-  const url = `https://www.omdbapi.com/?apikey=${API}&i=${imdbID}&plot=full`;
+export async function getMovieById(id) {
+  const url = `https://www.omdbapi.com/?apikey=${API}&i=${id}&plot=full`;
   const res = await fetch(url);
   return await res.json();
 }
 ```
 
-Watchlist:
+---
+
+# Helper 2: Watchlist storage
+
+`src/lib/watchlist.js`
 
 ```jsx
-const WATCHLIST_KEY = "watchlist";
+const KEY = "watchlist";
 
 export function loadWatchlist() {
-  try { return JSON.parse(localStorage.getItem(WATCHLIST_KEY)) ?? []; }
+  try { return JSON.parse(localStorage.getItem(KEY)) ?? []; }
   catch { return []; }
 }
 
 export function saveWatchlist(list) {
-  localStorage.setItem(WATCHLIST_KEY, JSON.stringify(list));
+  localStorage.setItem(KEY, JSON.stringify(list));
+}
+
+export function toggleWatch(list, movie) {
+  const exists = list.some(m => m.imdbID === movie.imdbID);
+  return exists ? list.filter(m => m.imdbID !== movie.imdbID) : [...list, movie];
 }
 ```
 
-Modal pattern:
+---
+
+# Helper 3: Modal
+
+`src/components/Modal.jsx`
 
 ```jsx
-function Modal({ open, onClose, children }) {
+export default function Modal({ open, onClose, children }) {
   if (!open) return null;
   return (
     <div className="backdrop" onClick={onClose}>
@@ -453,11 +459,172 @@ function Modal({ open, onClose, children }) {
 }
 ```
 
-CSS hints:
+---
+
+# Helper 4: Results Grid
+
+`src/components/ResultsGrid.jsx`
+
+```jsx
+export default function ResultsGrid({ items, onSelect, onToggleWatch, watchlist }) {
+  return (
+    <div className="grid">
+      {items.map(m => {
+        const inList = watchlist.some(x => x.imdbID === m.imdbID);
+        return (
+          <article key={m.imdbID} className="card-sm">
+            <img src={m.Poster !== "N/A" ? m.Poster : "/placeholder.png"} alt={m.Title} />
+            <div style={{ padding: ".5rem .75rem" }}>
+              <strong>{m.Title}</strong>
+              <div style={{ display: "flex", gap: ".5rem", marginTop: ".5rem" }}>
+                <button onClick={() => onSelect(m.imdbID)}>Details</button>
+                <button onClick={() => onToggleWatch(m)}>{inList ? "Remove" : "Watch"}</button>
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+```
+
+---
+
+# Helper 5: Pager
+
+`src/components/Pager.jsx`
+
+```jsx
+export default function Pager({ page, pages, onPage }) {
+  if (pages <= 1) return null;
+  return (
+    <div className="pager">
+      <button disabled={page <= 1} onClick={() => onPage(page - 1)}>Prev</button>
+      <span>{page} / {pages}</span>
+      <button disabled={page >= pages} onClick={() => onPage(page + 1)}>Next</button>
+    </div>
+  );
+}
+```
+
+---
+
+# Minimal activity wiring
+
+Drop this inside your `App.jsx` version for the activity section.
+
+```jsx
+import { useState, useEffect } from "react";
+import { searchMovies, getMovieById } from "./lib/omdb.js";
+import { loadWatchlist, saveWatchlist, toggleWatch } from "./lib/watchlist.js";
+import ResultsGrid from "./components/ResultsGrid.jsx";
+import Pager from "./components/Pager.jsx";
+import Modal from "./components/Modal.jsx";
+
+export default function App() {
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [details, setDetails] = useState(null);
+  const [watch, setWatch] = useState(loadWatchlist());
+
+  useEffect(() => { saveWatchlist(watch); }, [watch]);
+
+  useEffect(() => {
+    let ignore = false;
+    async function run() {
+      if (!query) return;
+      setLoading(true);
+      setError("");
+      const { items: result, total: t, error: err } = await searchMovies(query, page);
+      if (!ignore) {
+        setItems(result);
+        setTotal(t);
+        if (err) setError(err);
+        setLoading(false);
+      }
+    }
+    run();
+    return () => { ignore = true; };
+  }, [query, page]);
+
+  useEffect(() => {
+    let ignore = false;
+    async function run() {
+      if (!selected) return;
+      const data = await getMovieById(selected);
+      if (!ignore) setDetails(data);
+    }
+    run();
+    return () => { ignore = true; };
+  }, [selected]);
+
+  const pages = Math.max(1, Math.ceil(total / 10));
+
+  return (
+    <div className="container">
+      <h1>Mini Movie Explorer</h1>
+
+      <form
+        onSubmit={(e) => { e.preventDefault(); setPage(1); setQuery(e.currentTarget.term.value.trim()); }}
+        className="search"
+      >
+        <label htmlFor="term" className="sr-only">Search</label>
+        <input id="term" name="term" placeholder="Search movies…" />
+        <button type="submit">Search</button>
+      </form>
+
+      {loading && <p className="muted">Loading…</p>}
+      {error && <p className="error">{error}</p>}
+
+      {!loading && items.length > 0 && (
+        <>
+          <ResultsGrid
+            items={items}
+            onSelect={setSelected}
+            onToggleWatch={(m) => setWatch(prev => toggleWatch(prev, m))}
+            watchlist={watch}
+          />
+          <Pager page={page} pages={pages} onPage={setPage} />
+        </>
+      )}
+
+      <h2>Watchlist</h2>
+      <ul>
+        {watch.map(w => (
+          <li key={w.imdbID}>
+            {w.Title} <button onClick={() => setWatch(prev => toggleWatch(prev, w))}>Remove</button>
+          </li>
+        ))}
+      </ul>
+
+      <Modal open={Boolean(selected)} onClose={() => { setSelected(null); setDetails(null); }}>
+        {!details ? <p className="muted">Loading details…</p> : (
+          <>
+            <h3>{details.Title} ({details.Year})</h3>
+            <p>{details.Plot}</p>
+            <p><strong>Actors:</strong> {details.Actors}</p>
+            <p><strong>Ratings:</strong> {details.Ratings?.map(r => `${r.Source} ${r.Value}`).join(" · ")}</p>
+          </>
+        )}
+      </Modal>
+    </div>
+  );
+}
+```
+
+---
+
+# CSS helpers
 
 ```css
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 1rem; }
-.card-sm { background: var(--panel); border: 1px solid #1f2937; border-radius: 10px; overflow: hidden; cursor: pointer; }
+.card-sm { background: var(--panel); border: 1px solid #1f2937; border-radius: 10px; overflow: hidden; }
 .card-sm img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
 .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; padding: 1rem; }
 .modal { background: #0b1324; border: 1px solid #1f2937; border-radius: 12px; max-width: 720px; width: 100%; padding: 1rem 1.25rem; }
@@ -465,24 +632,6 @@ CSS hints:
 .pager { display: flex; gap: .5rem; justify-content: center; margin: 1rem 0; }
 ```
 
-Stretch goals if time allows.
-Add a year filter.
-Add a type filter using `type=movie|series|episode`.
-Add keyboard navigation and focus traps for the modal.
-Add debounced search.
-
 ---
 
-## Key takeaways
 
-Vite makes React dev fast.
-Env vars use the `VITE_` prefix.
-
-Lift shared state to the nearest common parent.
-Think lobby mailroom.
-
-`useEffect` runs when you tell it to.
-Think scheduled task.
-
-You styled a clean interface with pure CSS.
-You extended the app with search, details, and a watchlist.
