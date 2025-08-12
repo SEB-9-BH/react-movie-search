@@ -127,21 +127,21 @@ export default function App() {
 
 ```
 App
- ├─ Form                // user types a title… submits
- └─ MovieDisplay        // shows loading… error… or the movie
+ ├─ Form/Form.jsx                // user types a title… submits
+ └─ MovieDisplay/MovieDisplay.jsx        // shows loading… error… or the movie
 ```
 
 Create empty components.
 
 ```jsx
-// src/components/Form.jsx
+// src/components/Form/Form.jsx
 export default function Form() {
   return <form className="search">Form goes here…</form>;
 }
 ```
 
 ```jsx
-// src/components/MovieDisplay.jsx
+// src/components/MovieDisplay/MovieDisplay.jsx
 export default function MovieDisplay() {
   return <p className="muted">Results render here…</p>;
 }
@@ -152,8 +152,8 @@ Wire them in.
 ```jsx
 // src/App.jsx
 import "./App.css";
-import Form from "./components/Form.jsx";
-import MovieDisplay from "./components/MovieDisplay.jsx";
+import Form from "./components/Form/Form.jsx";
+import MovieDisplay from "./components/MovieDisplay/MovieDisplay.jsx";
 
 export default function App() {
   return (
@@ -179,8 +179,8 @@ Add parent state and a search function.
 // src/App.jsx
 import { useState, useEffect } from "react";
 import "./App.css";
-import Form from "./components/Form.jsx";
-import MovieDisplay from "./components/MovieDisplay.jsx";
+import Form from "./components/Form/Form.jsx";
+import MovieDisplay from "./components/MovieDisplay/MovieDisplay.jsx";
 
 export default function App() {
   const [movie, setMovie] = useState(null);
@@ -227,7 +227,7 @@ export default function App() {
 # Part 4… Passing Props into `Form` and Controlling Input
 
 ```jsx
-// src/components/Form.jsx
+// src/components/Form/Form.jsx
 import { useState } from "react";
 
 export default function Form({ moviesearch }) {
@@ -265,7 +265,7 @@ export default function Form({ moviesearch }) {
 # Part 5… Display States with `MovieDisplay`
 
 ```jsx
-// src/components/MovieDisplay.jsx
+// src/components/MovieDisplay/MovieDisplay.jsx
 export default function MovieDisplay({ movie, loading, error }) {
   if (loading) return <p className="muted">Loading…</p>;
   if (error) return <p className="error">{error}</p>;
